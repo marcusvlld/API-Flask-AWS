@@ -68,6 +68,10 @@ data "aws_vpc" "default" {
   default = true
 }
 
+data "aws_subnet" "default" {
+  default_for_az = true
+}
+
 data "aws_subnets" "default_subnets" {
   filter {
     name   = "vpc-id"
@@ -82,7 +86,7 @@ resource "aws_instance" "api_server" {
   instance_type               = var.instance_type
   key_name                    = aws_key_pair.deployer.key_name
   vpc_security_group_ids      = [aws_security_group.sg_api.id]
-  subnet_id = element(data.aws_subnets.default_subnets.ids, 0)
+  subnet_id                   = data.aws_subnet.default.id
   associate_public_ip_address = true
 
   # user_data instala dependências, clona repo e inicia app via systemd
