@@ -30,8 +30,8 @@ cd /opt/apps
 # 4. Clonar repositório do projeto
 # ============================================
 echo "Clonando repositório user-info-api..."
-# Substitua ${repo_url} pela variável do Terraform ou cole o URL direto
-git clone ${repo_url} user-info-api
+
+git clone ${github_repo} user-info-api
 
 # Verificar se o clone foi bem-sucedido
 if [ ! -d "user-info-api" ]; then
