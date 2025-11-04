@@ -12,7 +12,7 @@ provider "aws" {
   region = var.aws_region
 }
 
-# Pega a AMI Amazon Linux 2 (compatível e leve)
+# Pega a AMI Amazon Linux 2
 data "aws_ami" "amazon_linux" {
   most_recent = true
   owners      = ["amazon"]
@@ -63,7 +63,7 @@ resource "aws_security_group" "sg_api" {
   }
 }
 
-# Pega o default VPC (para evitar criar/gerenciar VPC)
+# Pega o default VPC
 data "aws_vpc" "default" {
   default = true
 }
@@ -89,7 +89,7 @@ resource "aws_instance" "api_server" {
 
   # user_data instala dependências, clona repo e inicia app via systemd
   user_data = templatefile("${path.module}/user_data.tpl", {
-  github_repo = var.github_repo  # ✅ Apenas isso é necessário
+  github_repo = var.github_repo 
 })
 
   tags = {
@@ -97,7 +97,7 @@ resource "aws_instance" "api_server" {
   }
 }
 
-# Espera até SSH estar disponível (ajuda no apply)
+# Espera até SSH estar disponível 
 resource "null_resource" "wait_for_ssh" {
   depends_on = [aws_instance.api_server]
 

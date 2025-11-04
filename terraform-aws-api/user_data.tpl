@@ -2,7 +2,7 @@
 
 # Script de inicialização para EC2 - API Flask
 # Compatível com Amazon Linux 2 e Ubuntu
-# Estrutura do repo: API-Flask-AWS/user-info-api/app.py
+
 
 # ============================================
 # Configuração de logs para debug
@@ -38,7 +38,7 @@ else
     DISTRO="ubuntu"
     USER="ubuntu"
     
-    # Atualizar pacotes (sem interação)
+    # Atualizar pacotes 
     export DEBIAN_FRONTEND=noninteractive
     apt-get update -y
     
@@ -173,19 +173,18 @@ Environment="PATH=$APP_DIR/venv/bin:/usr/local/bin:/usr/bin:/bin"
 Environment="PYTHONUNBUFFERED=1"
 Environment="FLASK_APP=app.py"
 
-# Usando Gunicorn (recomendado para produção)
+# Usando Gunicorn 
 ExecStart=$APP_DIR/venv/bin/gunicorn \
     --bind 0.0.0.0:5000 \
     --workers 2 \
     --timeout 120 \
-    --access-logfile /var/log/flask-access.log \
-    --error-logfile /var/log/flask-error.log \
+    --access-logfile /opt/api-flask-aws/user-info-api/logs/access.log \
+    --error-logfile /opt/api-flask-aws/user-info-api/logs/error.log \
     app:app
 
 Restart=always
 RestartSec=10
-StandardOutput=append:/var/log/flask-api.log
-StandardError=append:/var/log/flask-error.log
+
 
 [Install]
 WantedBy=multi-user.target
