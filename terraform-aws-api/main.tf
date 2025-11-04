@@ -89,9 +89,7 @@ resource "aws_instance" "api_server" {
 
   # user_data instala dependências, clona repo e inicia app via systemd
   user_data = templatefile("${path.module}/user_data.tpl", {
-  github_repo = var.github_repo
-  APP_DIR     = "/opt/userinfoapi"
-  SERVICE_FILE = "/etc/systemd/system/userinfoapi.service"
+  github_repo = var.github_repo  # ✅ Apenas isso é necessário
 })
 
   tags = {

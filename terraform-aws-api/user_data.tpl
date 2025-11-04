@@ -7,15 +7,15 @@
 # ============================================
 # Configuração de logs para debug
 # ============================================
-LOGFILE=/var/log/user-data-execution.log
-exec > >(tee -a ${LOGFILE}) 2>&1
+LOGFILE="/var/log/user-data-execution.log"
+exec > >(tee -a $LOGFILE) 2>&1
 echo "=== Iniciando user_data em $(date) ==="
 
 # ============================================
 # Variáveis de configuração
 # ============================================
-APP_DIR=/opt/api-flask-aws
-API_DIR=${APP_DIR}/user-info-api
+APP_DIR="/opt/api-flask-aws"
+API_DIR="$APP_DIR/user-info-api"
 GITHUB_REPO="${github_repo}"
 
 # ============================================
@@ -58,19 +58,19 @@ echo "Pacotes instalados com sucesso"
 # 2. Criar diretório e clonar repositório
 # ============================================
 echo "Criando diretório da aplicação..."
-mkdir -p ${APP_DIR}
+mkdir -p $APP_DIR
 
-echo "Clonando repositório: ${GITHUB_REPO}"
-if [ -z "${GITHUB_REPO}" ]; then
+echo "Clonando repositório: $GITHUB_REPO"
+if [ -z "$GITHUB_REPO" ]; then
     echo "ERRO: Variável github_repo não definida"
     exit 1
 fi
 
 # Remove diretório anterior se existir
-rm -rf ${APP_DIR}
+rm -rf $APP_DIR
 
 # Clona o repositório completo (API-Flask-AWS)
-git clone ${GITHUB_REPO} ${APP_DIR}
+git clone $GITHUB_REPO $APP_DIR
 
 if [ $? -ne 0 ]; then
     echo "ERRO: Falha ao clonar repositório"
@@ -83,29 +83,29 @@ echo "Repositório clonado com sucesso"
 # 3. Verificar estrutura do repositório
 # ============================================
 echo "Verificando estrutura do projeto..."
-if [ ! -d "${API_DIR}" ]; then
-    echo "ERRO: Diretório user-info-api não encontrado em ${APP_DIR}"
-    echo "Conteúdo de ${APP_DIR}:"
-    ls -la ${APP_DIR}
+if [ ! -d "$API_DIR" ]; then
+    echo "ERRO: Diretório user-info-api não encontrado em $APP_DIR"
+    echo "Conteúdo de $APP_DIR:"
+    ls -la $APP_DIR
     exit 1
 fi
 
 echo "Estrutura do projeto:"
-ls -la ${APP_DIR}
+ls -la $APP_DIR
 echo ""
 echo "Conteúdo da pasta user-info-api:"
-ls -la ${API_DIR}
+ls -la $API_DIR
 
 # ============================================
 # 4. Verificar arquivos essenciais
 # ============================================
-if [ ! -f "${API_DIR}/app.py" ]; then
-    echo "ERRO: app.py não encontrado em ${API_DIR}"
+if [ ! -f "$API_DIR/app.py" ]; then
+    echo "ERRO: app.py não encontrado em $API_DIR"
     exit 1
 fi
 
-if [ ! -f "${API_DIR}/requirements.txt" ]; then
-    echo "AVISO: requirements.txt não encontrado em ${API_DIR}"
+if [ ! -f "$API_DIR/requirements.txt" ]; then
+    echo "AVISO: requirements.txt não encontrado em $API_DIR"
 fi
 
 echo "Arquivos essenciais encontrados!"
@@ -113,17 +113,17 @@ echo "Arquivos essenciais encontrados!"
 # ============================================
 # 5. Criar ambiente virtual
 # ============================================
-echo "Criando ambiente virtual em ${APP_DIR}/venv..."
-cd ${API_DIR}
-python3 -m venv ${APP_DIR}/venv
+echo "Criando ambiente virtual em $APP_DIR/venv..."
+cd $API_DIR
+python3 -m venv $APP_DIR/venv
 
-if [ ! -f "${APP_DIR}/venv/bin/activate" ]; then
+if [ ! -f "$APP_DIR/venv/bin/activate" ]; then
     echo "ERRO: Falha ao criar ambiente virtual"
     exit 1
 fi
 
 echo "Ativando ambiente virtual..."
-source ${APP_DIR}/venv/bin/activate
+source $APP_DIR/venv/bin/activate
 
 # ============================================
 # 6. Instalar dependências
@@ -132,8 +132,8 @@ echo "Atualizando pip..."
 pip install --upgrade pip
 
 echo "Instalando dependências do requirements.txt..."
-if [ -f "${API_DIR}/requirements.txt" ]; then
-    pip install -r ${API_DIR}/requirements.txt
+if [ -f "$API_DIR/requirements.txt" ]; then
+    pip install -r $API_DIR/requirements.txt
     if [ $? -ne 0 ]; then
         echo "ERRO: Falha ao instalar dependências"
         exit 1
@@ -151,39 +151,36 @@ pip list | grep -E "Flask|gunicorn"
 # 7. Ajustar permissões
 # ============================================
 echo "Ajustando permissões..."
-chown -R ${USER}:${USER} ${APP_DIR}
+chown -R $USER:$USER $APP_DIR
 
 # ============================================
 # 8. Criar serviço systemd
 # ============================================
 echo "Criando serviço systemd..."
-SERVICE_FILE=/etc/systemd/system/flask-api.service
+SERVICE_FILE="/etc/systemd/system/flask-api.service"
 
-cat > ${SERVICE_FILE} <<EOF
+cat > $SERVICE_FILE <<EOF
 [Unit]
 Description=Flask User Info API
 After=network.target
 
 [Service]
 Type=simple
-User=${USER}
-Group=${USER}
-WorkingDirectory=${API_DIR}
-Environment="PATH=${APP_DIR}/venv/bin:/usr/local/bin:/usr/bin:/bin"
+User=$USER
+Group=$USER
+WorkingDirectory=$API_DIR
+Environment="PATH=$APP_DIR/venv/bin:/usr/local/bin:/usr/bin:/bin"
 Environment="PYTHONUNBUFFERED=1"
 Environment="FLASK_APP=app.py"
 
 # Usando Gunicorn (recomendado para produção)
-ExecStart=${APP_DIR}/venv/bin/gunicorn \
+ExecStart=$APP_DIR/venv/bin/gunicorn \
     --bind 0.0.0.0:5000 \
     --workers 2 \
     --timeout 120 \
     --access-logfile /var/log/flask-access.log \
     --error-logfile /var/log/flask-error.log \
     app:app
-
-# Alternativa: usar Flask diretamente (descomente se app.py já tem app.run())
-# ExecStart=${APP_DIR}/venv/bin/python ${API_DIR}/app.py
 
 Restart=always
 RestartSec=10
@@ -195,7 +192,7 @@ WantedBy=multi-user.target
 EOF
 
 echo "Conteúdo do serviço criado:"
-cat ${SERVICE_FILE}
+cat $SERVICE_FILE
 
 # ============================================
 # 9. Ativar e iniciar o serviço
@@ -256,9 +253,9 @@ fi
 # ============================================
 echo ""
 echo "=== INFORMAÇÕES FINAIS ==="
-echo "Diretório da aplicação: ${APP_DIR}"
-echo "Diretório da API: ${API_DIR}"
-echo "Ambiente virtual: ${APP_DIR}/venv"
+echo "Diretório da aplicação: $APP_DIR"
+echo "Diretório da API: $API_DIR"
+echo "Ambiente virtual: $APP_DIR/venv"
 echo ""
 echo "=== COMANDOS ÚTEIS PARA DEBUG ==="
 echo "Ver logs do user_data: sudo cat /var/log/user-data-execution.log"
