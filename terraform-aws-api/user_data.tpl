@@ -35,27 +35,28 @@ if [ -f requirements.txt ]; then
     pip install -r requirements.txt
 fi
 
-# Cria systemd service para rodar a app com gunicorn (fallback para flask run)
+# Garante que gunicorn esteja instalado
+pip install gunicorn || true
+
+# Cria systemd service para rodar a app com gunicorn
 SERVICE_FILE=/etc/systemd/system/userinfoapi.service
-cat > ${SERVICE_FILE} <<'EOF'
+cat > ${SERVICE_FILE} <<EOF
 [Unit]
 Description=UserInfoAPI
 After=network.target
 
 [Service]
-User=root
-WorkingDirectory=/opt/userinfoapi
-Environment="PATH=/opt/userinfoapi/venv/bin"
-ExecStart=/opt/userinfoapi/venv/bin/gunicorn --bind 0.0.0.0:5000 app:app
+User=ec2-user
+WorkingDirectory=${APP_DIR}
+Environment="PATH=${APP_DIR}/venv/bin"
+ExecStart=${APP_DIR}/venv/bin/gunicorn -w 4 -b 0.0.0.0:5000 app:app
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-# Se gunicorn não estiver instalado, instala
-source venv/bin/activate
-pip install gunicorn || true
+
 
 # Ativa e inicia o serviço
 systemctl daemon-reload
