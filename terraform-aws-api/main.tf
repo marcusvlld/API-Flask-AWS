@@ -68,9 +68,7 @@ data "aws_vpc" "default" {
   default = true
 }
 
-data "aws_subnet" "default" {
-  default_for_az = true
-}
+
 
 data "aws_subnets" "default_subnets" {
   filter {
@@ -83,10 +81,10 @@ data "aws_subnets" "default_subnets" {
 # Cria uma instância EC2
 resource "aws_instance" "api_server" {
   ami                         = data.aws_ami.amazon_linux.id
-  instance_type               = var.instance_type
+  instance_type               = "t2.micro"
   key_name                    = aws_key_pair.deployer.key_name
   vpc_security_group_ids      = [aws_security_group.sg_api.id]
-  subnet_id                   = data.aws_subnet.default.id
+  subnet_id                   = element(data.aws_subnets.default.ids, 0)
   associate_public_ip_address = true
 
   # user_data instala dependências, clona repo e inicia app via systemd
