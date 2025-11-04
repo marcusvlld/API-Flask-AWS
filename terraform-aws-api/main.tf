@@ -31,7 +31,7 @@ resource "aws_key_pair" "deployer" {
 
 # Security Group: SSH e porta 5000 (Flask)
 resource "aws_security_group" "sg_api" {
-  name        = "sg-userinfoapi"
+  name        = "userinfoapi-sg"
   description = "Allow SSH and Flask port"
   vpc_id      = data.aws_vpc.default.id
 
@@ -68,9 +68,13 @@ data "aws_vpc" "default" {
   default = true
 }
 
-data "aws_subnet_ids" "default_subnets" {
-  vpc_id = data.aws_vpc.default.id
+data "aws_subnets" "default_subnets" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
 }
+
 
 # Cria uma instância EC2
 resource "aws_instance" "api_server" {
@@ -78,7 +82,7 @@ resource "aws_instance" "api_server" {
   instance_type               = var.instance_type
   key_name                    = aws_key_pair.deployer.key_name
   vpc_security_group_ids      = [aws_security_group.sg_api.id]
-  subnet_id                   = element(data.aws_subnet_ids.default_subnets.ids, 0)
+  subnet_id = element(data.aws_subnets.default_subnets.ids, 0)
   associate_public_ip_address = true
 
   # user_data instala dependências, clona repo e inicia app via systemd
