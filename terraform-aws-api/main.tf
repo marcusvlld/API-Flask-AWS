@@ -87,8 +87,9 @@ resource "aws_instance" "api_server" {
 
   # user_data instala dependências, clona repo e inicia app via systemd
   user_data = templatefile("${path.module}/user_data.tpl", {
-    github_repo = var.github_repo
-  })
+  github_repo = var.github_repo
+  APP_DIR     = "/opt/userinfoapi"
+})
 
   tags = {
     Name = "UserInfoAPI-Server"
