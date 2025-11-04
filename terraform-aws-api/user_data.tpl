@@ -49,7 +49,7 @@ After=network.target
 User=ec2-user
 WorkingDirectory=${APP_DIR}
 Environment="PATH=${APP_DIR}/venv/bin"
-ExecStart=${APP_DIR}/venv/bin/gunicorn -w 4 -b 0.0.0.0:5000 app:app
+ExecStart=/opt/userinfoapi/venv/bin/gunicorn --chdir /opt/userinfoapi/user-info-api --bind 0.0.0.0:5000 app:app
 Restart=always
 
 [Install]
