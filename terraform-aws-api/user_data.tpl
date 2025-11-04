@@ -226,8 +226,8 @@ fi
 
 echo ""
 echo "=== ÚLTIMAS LINHAS DO LOG DE ERRO ==="
-if [ -f /var/log/flask-error.log ]; then
-    tail -20 /var/log/flask-error.log
+if [ -f /opt/api-flask-aws/user-info-api/logs/error.log ]; then
+    tail -20 /opt/api-flask-aws/user-info-api/logs/error.log
 else
     echo "Arquivo de log ainda não criado"
 fi
