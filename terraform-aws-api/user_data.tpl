@@ -1,115 +1,271 @@
 #!/bin/bash
 
-# Script de inicialização automática para EC2 com API Flask
-# Compatível com Ubuntu
-# Executa na criação da instância via Terraform
+# Script de inicialização para EC2 - API Flask
+# Compatível com Amazon Linux 2 e Ubuntu
+# Estrutura do repo: API-Flask-AWS/user-info-api/app.py
 
 # ============================================
-# 1. Atualizar repositórios do sistema
+# Configuração de logs para debug
 # ============================================
-echo "Atualizando repositórios do sistema..."
-apt-get update -y
+LOGFILE=/var/log/user-data-execution.log
+exec > >(tee -a ${LOGFILE}) 2>&1
+echo "=== Iniciando user_data em $(date) ==="
 
 # ============================================
-# 2. Instalar Python 3, pip e git
+# Variáveis de configuração
 # ============================================
-echo "Instalando Python 3, pip e git..."
-apt-get install -y python3 python3-pip git
-
-# Criar link simbólico para facilitar uso do python
-update-alternatives --install /usr/bin/python python /usr/bin/python3 1
+APP_DIR=/opt/api-flask-aws
+API_DIR=${APP_DIR}/user-info-api
+GITHUB_REPO="${github_repo}"
 
 # ============================================
-# 3. Criar diretório para a aplicação
+# 1. Detectar distribuição e instalar pacotes
 # ============================================
-echo "Criando diretório de trabalho..."
-mkdir -p /opt/apps
-cd /opt/apps
-
-# ============================================
-# 4. Clonar repositório do projeto
-# ============================================
-echo "Clonando repositório user-info-api..."
-
-git clone ${github_repo} user-info-api
-
-# Verificar se o clone foi bem-sucedido
-if [ ! -d "user-info-api" ]; then
-    echo "Erro: Falha ao clonar o repositório"
-    exit 1
-fi
-
-# ============================================
-# 5. Entrar na pasta do projeto
-# ============================================
-cd user-info-api
-
-# ============================================
-# 6. Instalar dependências do projeto
-# ============================================
-echo "Instalando dependências Python do requirements.txt..."
-pip3 install -r requirements.txt
-
-# ============================================
-# 7. Configurar variáveis de ambiente (se necessário)
-# ============================================
-# Descomente e ajuste se sua API precisar de variáveis de ambiente
-# export FLASK_APP=app.py
-# export FLASK_ENV=production
-
-# ============================================
-# 8. Iniciar a API Flask em background
-# ============================================
-echo "Iniciando API Flask na porta 5000..."
-
-# Usando nohup para manter o processo rodando após logout
-# Redirecionando stdout e stderr para arquivo de log
-# O '&' no final executa em background
-nohup python3 app.py > /var/log/flask-api.log 2>&1 &
-
-# Salvar o PID do processo para gerenciamento futuro
-echo $! > /var/run/flask-api.pid
-
-# ============================================
-# 9. Verificar se a API está rodando
-# ============================================
-sleep 5
-if ps -p $(cat /var/run/flask-api.pid) > /dev/null; then
-    echo "API Flask iniciada com sucesso! PID: $(cat /var/run/flask-api.pid)"
+echo "Detectando distribuição..."
+if [ -f /etc/os-release ] && grep -q "Amazon Linux" /etc/os-release; then
+    echo "Distribuição: Amazon Linux"
+    DISTRO="amazon"
+    USER="ec2-user"
+    
+    # Atualizar pacotes
+    yum update -y
+    
+    # Instalar Python 3, pip e git
+    yum install -y python3 python3-pip git python3-devel gcc
+    
 else
-    echo "Erro: Falha ao iniciar a API Flask"
+    echo "Distribuição: Ubuntu/Debian"
+    DISTRO="ubuntu"
+    USER="ubuntu"
+    
+    # Atualizar pacotes (sem interação)
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update -y
+    
+    # Instalar Python 3, pip, venv e git
+    apt-get install -y \
+        python3 \
+        python3-pip \
+        python3-venv \
+        git \
+        build-essential \
+        python3-dev
+fi
+
+echo "Pacotes instalados com sucesso"
+
+# ============================================
+# 2. Criar diretório e clonar repositório
+# ============================================
+echo "Criando diretório da aplicação..."
+mkdir -p ${APP_DIR}
+
+echo "Clonando repositório: ${GITHUB_REPO}"
+if [ -z "${GITHUB_REPO}" ]; then
+    echo "ERRO: Variável github_repo não definida"
     exit 1
 fi
 
+# Remove diretório anterior se existir
+rm -rf ${APP_DIR}
+
+# Clona o repositório completo (API-Flask-AWS)
+git clone ${GITHUB_REPO} ${APP_DIR}
+
+if [ $? -ne 0 ]; then
+    echo "ERRO: Falha ao clonar repositório"
+    exit 1
+fi
+
+echo "Repositório clonado com sucesso"
+
 # ============================================
-# 10. Configurar restart automático
+# 3. Verificar estrutura do repositório
 # ============================================
-# Criar script de inicialização systemd (mais robusto que nohup)
-cat > /etc/systemd/system/flask-api.service <<EOF
+echo "Verificando estrutura do projeto..."
+if [ ! -d "${API_DIR}" ]; then
+    echo "ERRO: Diretório user-info-api não encontrado em ${APP_DIR}"
+    echo "Conteúdo de ${APP_DIR}:"
+    ls -la ${APP_DIR}
+    exit 1
+fi
+
+echo "Estrutura do projeto:"
+ls -la ${APP_DIR}
+echo ""
+echo "Conteúdo da pasta user-info-api:"
+ls -la ${API_DIR}
+
+# ============================================
+# 4. Verificar arquivos essenciais
+# ============================================
+if [ ! -f "${API_DIR}/app.py" ]; then
+    echo "ERRO: app.py não encontrado em ${API_DIR}"
+    exit 1
+fi
+
+if [ ! -f "${API_DIR}/requirements.txt" ]; then
+    echo "AVISO: requirements.txt não encontrado em ${API_DIR}"
+fi
+
+echo "Arquivos essenciais encontrados!"
+
+# ============================================
+# 5. Criar ambiente virtual
+# ============================================
+echo "Criando ambiente virtual em ${APP_DIR}/venv..."
+cd ${API_DIR}
+python3 -m venv ${APP_DIR}/venv
+
+if [ ! -f "${APP_DIR}/venv/bin/activate" ]; then
+    echo "ERRO: Falha ao criar ambiente virtual"
+    exit 1
+fi
+
+echo "Ativando ambiente virtual..."
+source ${APP_DIR}/venv/bin/activate
+
+# ============================================
+# 6. Instalar dependências
+# ============================================
+echo "Atualizando pip..."
+pip install --upgrade pip
+
+echo "Instalando dependências do requirements.txt..."
+if [ -f "${API_DIR}/requirements.txt" ]; then
+    pip install -r ${API_DIR}/requirements.txt
+    if [ $? -ne 0 ]; then
+        echo "ERRO: Falha ao instalar dependências"
+        exit 1
+    fi
+fi
+
+# Garantir que Flask e Gunicorn estejam instalados
+echo "Instalando Flask e Gunicorn..."
+pip install flask gunicorn
+
+echo "Pacotes Python instalados:"
+pip list | grep -E "Flask|gunicorn"
+
+# ============================================
+# 7. Ajustar permissões
+# ============================================
+echo "Ajustando permissões..."
+chown -R ${USER}:${USER} ${APP_DIR}
+
+# ============================================
+# 8. Criar serviço systemd
+# ============================================
+echo "Criando serviço systemd..."
+SERVICE_FILE=/etc/systemd/system/flask-api.service
+
+cat > ${SERVICE_FILE} <<EOF
 [Unit]
-Description=Flask API User Info
+Description=Flask User Info API
 After=network.target
 
 [Service]
 Type=simple
-User=root
-WorkingDirectory=/opt/apps/user-info-api
-ExecStart=/usr/bin/python3 /opt/apps/user-info-api/app.py
+User=${USER}
+Group=${USER}
+WorkingDirectory=${API_DIR}
+Environment="PATH=${APP_DIR}/venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONUNBUFFERED=1"
+Environment="FLASK_APP=app.py"
+
+# Usando Gunicorn (recomendado para produção)
+ExecStart=${APP_DIR}/venv/bin/gunicorn \
+    --bind 0.0.0.0:5000 \
+    --workers 2 \
+    --timeout 120 \
+    --access-logfile /var/log/flask-access.log \
+    --error-logfile /var/log/flask-error.log \
+    app:app
+
+# Alternativa: usar Flask diretamente (descomente se app.py já tem app.run())
+# ExecStart=${APP_DIR}/venv/bin/python ${API_DIR}/app.py
+
 Restart=always
 RestartSec=10
 StandardOutput=append:/var/log/flask-api.log
-StandardError=append:/var/log/flask-api.log
+StandardError=append:/var/log/flask-error.log
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-# Habilitar e iniciar o serviço systemd
+echo "Conteúdo do serviço criado:"
+cat ${SERVICE_FILE}
+
+# ============================================
+# 9. Ativar e iniciar o serviço
+# ============================================
+echo "Recarregando systemd daemon..."
 systemctl daemon-reload
-systemctl enable flask-api.service
-systemctl restart flask-api.service
 
+echo "Habilitando serviço para iniciar no boot..."
+systemctl enable flask-api
 
+echo "Iniciando serviço..."
+systemctl start flask-api
 
-echo "Configuração concluída! API Flask disponível na porta 5000"
-echo "Logs disponíveis em: /var/log/flask-api.log"
+# ============================================
+# 10. Aguardar e verificar status
+# ============================================
+echo "Aguardando 10 segundos para a aplicação iniciar..."
+sleep 10
+
+echo "=== STATUS DO SERVIÇO ==="
+systemctl status flask-api --no-pager
+
+echo ""
+echo "=== VERIFICANDO PORTA 5000 ==="
+if command -v netstat &> /dev/null; then
+    netstat -tuln | grep 5000
+elif command -v ss &> /dev/null; then
+    ss -tuln | grep 5000
+else
+    echo "netstat/ss não disponível"
+fi
+
+echo ""
+echo "=== ÚLTIMAS LINHAS DO LOG DE ERRO ==="
+if [ -f /var/log/flask-error.log ]; then
+    tail -20 /var/log/flask-error.log
+else
+    echo "Arquivo de log ainda não criado"
+fi
+
+# ============================================
+# 11. Teste básico da API
+# ============================================
+echo ""
+echo "=== TESTANDO API LOCALMENTE ==="
+sleep 5
+
+# Tentar fazer uma requisição para a API
+if command -v curl &> /dev/null; then
+    echo "Fazendo requisição para http://localhost:5000/"
+    curl -v http://localhost:5000/ 2>&1 || echo "AVISO: Falha ao conectar na API"
+else
+    echo "curl não disponível para teste"
+fi
+
+# ============================================
+# 12. Informações finais
+# ============================================
+echo ""
+echo "=== INFORMAÇÕES FINAIS ==="
+echo "Diretório da aplicação: ${APP_DIR}"
+echo "Diretório da API: ${API_DIR}"
+echo "Ambiente virtual: ${APP_DIR}/venv"
+echo ""
+echo "=== COMANDOS ÚTEIS PARA DEBUG ==="
+echo "Ver logs do user_data: sudo cat /var/log/user-data-execution.log"
+echo "Ver status do serviço: sudo systemctl status flask-api"
+echo "Ver logs em tempo real: sudo journalctl -u flask-api -f"
+echo "Ver logs de erro: sudo tail -f /var/log/flask-error.log"
+echo "Reiniciar serviço: sudo systemctl restart flask-api"
+echo "Testar API: curl http://localhost:5000/"
+echo ""
+echo "=== user_data finalizado em $(date) ==="
