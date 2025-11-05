@@ -11,13 +11,13 @@ variable "instance_type" {
 }
 
 variable "public_key_path" {
-  description = "Path to your local SSH public key file (e.g. ~/.ssh/id_rsa.pub)"
+  description = "Caminho para a sua chave pública SSH (e.g. ~/.ssh/id_rsa.pub)"
   type        = string
   default     = "~/.ssh/id_rsa.pub"
 }
 
 variable "github_repo" {
-  description = "Git repo URL containing your Flask app (HTTPS). Should have app.py and requirements.txt in repo root"
+  description = "Repositório GIT contendo o app Flask."
   type        = string
   default     = "https://github.com/marcusvlld/API-Flask-AWS.git"
 }
