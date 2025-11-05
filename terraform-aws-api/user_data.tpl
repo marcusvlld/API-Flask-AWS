@@ -142,7 +142,7 @@ fi
 
 # Garantir que Flask e Gunicorn estejam instalados
 echo "Instalando Flask e Gunicorn..."
-pip install flask gunicorn
+pip install gunicorn flask==2.2.5 flask-cors
 
 echo "Pacotes Python instalados:"
 pip list | grep -E "Flask|gunicorn"
@@ -169,7 +169,7 @@ Type=simple
 User=$USER
 Group=$USER
 WorkingDirectory=$API_DIR
-Environment="PATH=$APP_DIR/venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PATH=$APP_DIR/venv/bin"
 Environment="PYTHONUNBUFFERED=1"
 Environment="FLASK_APP=app.py"
 
