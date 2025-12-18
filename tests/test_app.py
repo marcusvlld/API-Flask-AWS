@@ -1,6 +1,3 @@
-import sys
-sys.path.append(".")
-
 from app import app
 
 def test_home_route():
