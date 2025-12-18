@@ -1,4 +1,4 @@
-from app import app
+from user_info_api.app import app
 
 def test_home_route():
     client = app.test_client()
