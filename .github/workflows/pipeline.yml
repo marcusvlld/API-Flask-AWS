@@ -28,3 +28,10 @@ jobs:
       - name: Rodar testes
         run: pytest
 
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
