@@ -14,7 +14,7 @@ echo "=== Iniciando user_data em $(date) ==="
 # ============================================
 # Variáveis de configuração
 # ============================================
-APP_DIR="/homr/ec2-user/api-flask-aws"
+APP_DIR="/home/ec2-user/api-flask-aws"
 API_DIR="$APP_DIR/user_info_api"
 GITHUB_REPO="${github_repo}"
 
