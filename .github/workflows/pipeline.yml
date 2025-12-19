@@ -35,3 +35,22 @@ jobs:
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
+
+      - name: Configurar chave SSH
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > ec2-key.pem
+          chmod 600 ec2-key.pem
+
+      - name: Testar conexão SSH
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ec2-key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "echo 'Conexão OK na EC2!'"
+
+      - name: Deploy no servidor EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ec2-key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            cd /home/ec2-user/API-Flask-AWS
+            git pull
+            source venv/bin/activate
+            pip install -r requirements.txt
+            sudo systemctl restart flask-api
+          EOF
