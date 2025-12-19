@@ -15,7 +15,7 @@ echo "=== Iniciando user_data em $(date) ==="
 # Variáveis de configuração
 # ============================================
 APP_DIR="/opt/api-flask-aws"
-API_DIR="$APP_DIR/user-info-api"
+API_DIR="$APP_DIR/user_info_api"
 GITHUB_REPO="${github_repo}"
 
 # ============================================
@@ -84,7 +84,7 @@ echo "Repositório clonado com sucesso"
 # ============================================
 echo "Verificando estrutura do projeto..."
 if [ ! -d "$API_DIR" ]; then
-    echo "ERRO: Diretório user-info-api não encontrado em $APP_DIR"
+    echo "ERRO: Diretório user_info_api não encontrado em $APP_DIR"
     echo "Conteúdo de $APP_DIR:"
     ls -la $APP_DIR
     exit 1
@@ -93,7 +93,7 @@ fi
 echo "Estrutura do projeto:"
 ls -la $APP_DIR
 echo ""
-echo "Conteúdo da pasta user-info-api:"
+echo "Conteúdo da pasta user_info_api:"
 ls -la $API_DIR
 
 # ============================================
@@ -178,8 +178,8 @@ ExecStart=$APP_DIR/venv/bin/gunicorn \
     --bind 0.0.0.0:5000 \
     --workers 2 \
     --timeout 120 \
-    --access-logfile /opt/api-flask-aws/user-info-api/logs/access.log \
-    --error-logfile /opt/api-flask-aws/user-info-api/logs/error.log \
+    --access-logfile /opt/api-flask-aws/user_info_api/logs/access.log \
+    --error-logfile /opt/api-flask-aws/user_info_api/logs/error.log \
     app:app
 
 Restart=always
@@ -226,8 +226,8 @@ fi
 
 echo ""
 echo "=== ÚLTIMAS LINHAS DO LOG DE ERRO ==="
-if [ -f /opt/api-flask-aws/user-info-api/logs/error.log ]; then
-    tail -20 /opt/api-flask-aws/user-info-api/logs/error.log
+if [ -f /opt/api-flask-aws/user_info_api/logs/error.log ]; then
+    tail -20 /opt/api-flask-aws/user_info_api/logs/error.log
 else
     echo "Arquivo de log ainda não criado"
 fi
