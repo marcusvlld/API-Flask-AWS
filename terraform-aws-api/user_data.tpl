@@ -166,8 +166,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=$USER
-Group=$USER
+User=root
 WorkingDirectory=$API_DIR
 Environment="PATH=$APP_DIR/venv/bin"
 Environment="PYTHONUNBUFFERED=1"
