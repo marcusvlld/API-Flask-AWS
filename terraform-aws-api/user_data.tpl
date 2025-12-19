@@ -14,7 +14,7 @@ echo "=== Iniciando user_data em $(date) ==="
 # ============================================
 # Variáveis de configuração
 # ============================================
-APP_DIR="/opt/api-flask-aws"
+APP_DIR="/homr/ec2-user/api-flask-aws"
 API_DIR="$APP_DIR/user_info_api"
 GITHUB_REPO="${github_repo}"
 
@@ -70,7 +70,7 @@ fi
 rm -rf $APP_DIR
 
 # Clona o repositório completo (API-Flask-AWS)
-git clone $GITHUB_REPO $APP_DIR
+git clone --branch release-2.0 --single-branch $GITHUB_REPO $APP_DIR
 
 if [ $? -ne 0 ]; then
     echo "ERRO: Falha ao clonar repositório"
@@ -178,8 +178,8 @@ ExecStart=$APP_DIR/venv/bin/gunicorn \
     --bind 0.0.0.0:5000 \
     --workers 2 \
     --timeout 120 \
-    --access-logfile /opt/api-flask-aws/user_info_api/logs/access.log \
-    --error-logfile /opt/api-flask-aws/user_info_api/logs/error.log \
+    --access-logfile /home/ec2-user/api-flask-aws/user_info_api/logs/access.log \
+    --error-logfile /home/ec2-user/api-flask-aws/user_info_api/logs/error.log \
     app:app
 
 Restart=always
@@ -226,8 +226,8 @@ fi
 
 echo ""
 echo "=== ÚLTIMAS LINHAS DO LOG DE ERRO ==="
-if [ -f /opt/api-flask-aws/user_info_api/logs/error.log ]; then
-    tail -20 /opt/api-flask-aws/user_info_api/logs/error.log
+if [ -f /home/ec2-user/api-flask-aws/user_info_api/logs/error.log ]; then
+    tail -20 /home/ec2-user/api-flask-aws/user_info_api/logs/error.log
 else
     echo "Arquivo de log ainda não criado"
 fi
