@@ -14,9 +14,12 @@ echo "=== Iniciando user_data em $(date) ==="
 # ============================================
 # Variáveis de configuração
 # ============================================
-APP_DIR="/home/ec2-user/api-flask-aws"
+APP_DIR="/opt/api-flask-aws"
 API_DIR="$APP_DIR/user_info_api"
 GITHUB_REPO="${github_repo}"
+
+APP_USER="flask"
+APP_GROUP="flask"
 
 # ============================================
 # 1. Detectar distribuição e instalar pacotes
@@ -54,8 +57,18 @@ fi
 
 echo "Pacotes instalados com sucesso"
 
+# ==========================================================
+# 2. Criar usuário e grupo da aplicação
+# ==========================================================
+echo "Criando usuário e grupo da aplicação..."
+
+groupadd $APP_GROUP || true
+useradd -r -g $APP_GROUP -s /sbin/nologin $APP_USER || true
+
+usermod -aG $APP_GROUP ec2-user
+
 # ============================================
-# 2. Criar diretório e clonar repositório
+# 3. Criar diretório e clonar repositório
 # ============================================
 echo "Criando diretório da aplicação..."
 mkdir -p $APP_DIR
@@ -80,7 +93,7 @@ fi
 echo "Repositório clonado com sucesso"
 
 # ============================================
-# 3. Verificar estrutura do repositório
+# 4. Verificar estrutura do repositório
 # ============================================
 echo "Verificando estrutura do projeto..."
 if [ ! -d "$API_DIR" ]; then
@@ -97,7 +110,7 @@ echo "Conteúdo da pasta user_info_api:"
 ls -la $API_DIR
 
 # ============================================
-# 4. Verificar arquivos essenciais
+# 5. Verificar arquivos essenciais
 # ============================================
 if [ ! -f "$API_DIR/app.py" ]; then
     echo "ERRO: app.py não encontrado em $API_DIR"
@@ -111,7 +124,7 @@ fi
 echo "Arquivos essenciais encontrados!"
 
 # ============================================
-# 5. Criar ambiente virtual
+# 6. Criar ambiente virtual
 # ============================================
 echo "Criando ambiente virtual em $APP_DIR/venv..."
 cd $API_DIR
@@ -126,7 +139,7 @@ echo "Ativando ambiente virtual..."
 source $APP_DIR/venv/bin/activate
 
 # ============================================
-# 6. Instalar dependências
+# 7. Instalar dependências
 # ============================================
 echo "Atualizando pip..."
 pip install --upgrade pip
@@ -148,13 +161,14 @@ echo "Pacotes Python instalados:"
 pip list | grep -E "Flask|gunicorn"
 
 # ============================================
-# 7. Ajustar permissões
+# 8. Ajustar permissões
 # ============================================
 echo "Ajustando permissões..."
-chown -R $USER:$USER $APP_DIR
+chown -R root:$APP_GROUP $APP_DIR
+chmod -R 775 $APP_DIR
 
 # ============================================
-# 8. Criar serviço systemd
+# 9. Criar serviço systemd
 # ============================================
 echo "Criando serviço systemd..."
 SERVICE_FILE="/etc/systemd/system/flask-api.service"
@@ -166,7 +180,8 @@ After=network.target
 
 [Service]
 Type=simple
-User=root
+User=$APP_USER
+Group=$APP_GROUP
 WorkingDirectory=$API_DIR
 Environment="PATH=$APP_DIR/venv/bin"
 Environment="PYTHONUNBUFFERED=1"
@@ -177,8 +192,8 @@ ExecStart=$APP_DIR/venv/bin/gunicorn \
     --bind 0.0.0.0:5000 \
     --workers 2 \
     --timeout 120 \
-    --access-logfile /home/ec2-user/api-flask-aws/user_info_api/logs/access.log \
-    --error-logfile /home/ec2-user/api-flask-aws/user_info_api/logs/error.log \
+    --access-logfile /opt/api-flask-aws/user_info_api/logs/access.log \
+    --error-logfile /opt/api-flask-aws/user_info_api/logs/error.log \
     app:app
 
 Restart=always
@@ -193,7 +208,7 @@ echo "Conteúdo do serviço criado:"
 cat $SERVICE_FILE
 
 # ============================================
-# 9. Ativar e iniciar o serviço
+# 10. Ativar e iniciar o serviço
 # ============================================
 echo "Recarregando systemd daemon..."
 systemctl daemon-reload
@@ -204,8 +219,15 @@ systemctl enable flask-api
 echo "Iniciando serviço..."
 systemctl start flask-api
 
+# ==========================================================
+# 11. Permitir restart via GitHub Actions
+# ==========================================================
+echo "Configurando sudo para deploy..."
+echo "ec2-user ALL=(ALL) NOPASSWD: /bin/systemctl restart flask-api" > /etc/sudoers.d/flask-api
+chmod 440 /etc/sudoers.d/flask-api
+
 # ============================================
-# 10. Aguardar e verificar status
+# 12. Aguardar e verificar status
 # ============================================
 echo "Aguardando 10 segundos para a aplicação iniciar..."
 sleep 10
@@ -225,14 +247,14 @@ fi
 
 echo ""
 echo "=== ÚLTIMAS LINHAS DO LOG DE ERRO ==="
-if [ -f /home/ec2-user/api-flask-aws/user_info_api/logs/error.log ]; then
-    tail -20 /home/ec2-user/api-flask-aws/user_info_api/logs/error.log
+if [ -f /opt/api-flask-aws/user_info_api/logs/error.log ]; then
+    tail -20 /opt/api-flask-aws/user_info_api/logs/error.log
 else
     echo "Arquivo de log ainda não criado"
 fi
 
 # ============================================
-# 11. Teste básico da API
+# 13. Teste básico da API
 # ============================================
 echo ""
 echo "=== TESTANDO API LOCALMENTE ==="
@@ -247,7 +269,7 @@ else
 fi
 
 # ============================================
-# 12. Informações finais
+# 14. Informações finais
 # ============================================
 echo ""
 echo "=== INFORMAÇÕES FINAIS ==="
