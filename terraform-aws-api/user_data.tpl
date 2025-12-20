@@ -138,7 +138,7 @@ echo "Arquivos essenciais encontrados!"
 # ============================================
 echo "Criando ambiente virtual em $APP_DIR/venv..."
 cd $API_DIR
-python3 -m venv $APP_DIR/venv
+python3.10 -m venv $APP_DIR/venv
 
 if [ ! -f "$APP_DIR/venv/bin/activate" ]; then
     echo "ERRO: Falha ao criar ambiente virtual"
@@ -147,7 +147,7 @@ fi
 
 echo "Ativando ambiente virtual..."
 source $APP_DIR/venv/bin/activate
-pip install --upgrade pip setuptools wheel
+pip install --upgrade pip
 pip install -r requirements.txt
 
 # ============================================
