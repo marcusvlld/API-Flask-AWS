@@ -32,6 +32,9 @@ if [ -f /etc/os-release ] && grep -q "Amazon Linux" /etc/os-release; then
     
     # Atualizar pacotes
     yum update -y
+
+    echo "Instalando Git..."
+    yum install -y git
     
     # Instalar Python 3.10
     amazon-linux-extras enable python3.10
