@@ -33,8 +33,15 @@ if [ -f /etc/os-release ] && grep -q "Amazon Linux" /etc/os-release; then
     # Atualizar pacotes
     yum update -y
     
-    # Instalar Python 3, pip e git
-    yum install -y python3 python3-pip git python3-devel gcc
+    # Instalar Python 3.10
+    amazon-linux-extras enable python3.10
+    yum install -y python3.10 python3.10-devel
+
+    # Tornar python3.10 padrão
+    alternatives --set python /usr/bin/python3.10
+
+    # Verificar
+    python --version
     
 else
     echo "Distribuição: Ubuntu/Debian"
@@ -137,6 +144,8 @@ fi
 
 echo "Ativando ambiente virtual..."
 source $APP_DIR/venv/bin/activate
+pip install --upgrade pip setuptools wheel
+pip install -r requirements.txt
 
 # ============================================
 # 7. Instalar dependências
