@@ -32,19 +32,9 @@ if [ -f /etc/os-release ] && grep -q "Amazon Linux" /etc/os-release; then
     
     # Atualizar pacotes
     yum update -y
-
-    echo "Instalando Git..."
-    yum install -y git
     
-    # Instalar Python 3.10
-    amazon-linux-extras enable python3.10
-    yum install -y python3.10 python3.10-devel
-
-    # Tornar python3.10 padrão
-    alternatives --set python /usr/bin/python3.10
-
-    # Verificar
-    python --version
+    # Instalar Python 3, pip e git
+    yum install -y python3 python3-pip git python3-devel gcc
     
 else
     echo "Distribuição: Ubuntu/Debian"
@@ -138,7 +128,7 @@ echo "Arquivos essenciais encontrados!"
 # ============================================
 echo "Criando ambiente virtual em $APP_DIR/venv..."
 cd $API_DIR
-python3.10 -m venv $APP_DIR/venv
+python3 -m venv $APP_DIR/venv
 
 if [ ! -f "$APP_DIR/venv/bin/activate" ]; then
     echo "ERRO: Falha ao criar ambiente virtual"
