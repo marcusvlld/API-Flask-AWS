@@ -47,3 +47,26 @@ jobs:
 
       - name: Push image
         run: docker push marcusvlld/flask-api:latest
+
+  deploy:
+    needs: docker
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configurar chave SSH
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > ec2-key.pem
+          chmod 600 ec2-key.pem
+
+      - name: Testar conexão SSH
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ec2-key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "echo 'Conexão OK na EC2!'"
+    
+      - name: Deploy na EC2
+        run: |
+          ssh -i ec2-key.pem ec2-user@54.196.153.39 "
+            docker pull marcusvlld/flask-api:latest
+            docker stop api || true
+            docker rm api || true
+            docker run -d --name api -p 80:5000 marcusvlld/flask-api:latest
+          "
