@@ -25,14 +25,14 @@ A arquitetura atual segue o fluxo abaixo:
    - Stop do container antigo
    - Start do novo container
   
-*INSERIR DIAGRAMA AQUI*
+<img width="838" height="160" alt="Diagrama sem nome drawio (4)" src="https://github.com/user-attachments/assets/81466ecb-698a-40d6-9ffc-21636956b7b9" />
 
 ## CI/CD com GitHub Actions
 Este projeto utiliza um workflow principal com três jobs:
 
 ### 1. Job de build + test
 
-*INSERIR IMAGEM DO JOB BUILD*
+<img width="464" height="601" alt="Captura de tela 2025-12-24 111814" src="https://github.com/user-attachments/assets/acac4372-359a-46a3-b919-bb6ed57cf3ad" />
 
 Responsável por:
 - Checkout do código
@@ -42,7 +42,7 @@ Responsável por:
 
 ### 2. Job buld + push de imagem Docker
 
-*INSERIR IMAGEM DO JOB DOCKER*
+<img width="505" height="403" alt="Captura de tela 2025-12-24 111833" src="https://github.com/user-attachments/assets/a60d5438-272a-4200-90f5-6a7c9a456c2e" />
 
 Responsável por:
 - Fazer login no Docker Hub
@@ -51,7 +51,7 @@ Responsável por:
 
 ### 3. Job de deploy na EC2
 
-*INSERIR IMAGEM DO JOB DEPLOY*
+<img width="959" height="449" alt="Captura de tela 2025-12-24 111846" src="https://github.com/user-attachments/assets/2a69e445-3a87-4402-a0cb-9992e67a3677" />
 
 Responsável por:
 - Configurar a chave SSH
@@ -66,7 +66,7 @@ A aplicação é empacotada em um container Docker utilizando:
 - Porta 5000 exposta no container
 - Porta 80 exposta no host
 
-*INSERIR IMAGEM DO DOCKERFILE*
+<img width="457" height="353" alt="Captura de tela 2025-12-24 111900" src="https://github.com/user-attachments/assets/a04f8a48-3467-4ee7-91f0-af44b496f491" />
 
 ## Infraestrutura
 A infraestrutura é provisionada com **Terraform**, incluindo:
